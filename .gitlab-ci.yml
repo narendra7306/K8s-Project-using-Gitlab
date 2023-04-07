@@ -1,0 +1,25 @@
+variables:
+  DOCKER_REGISTRY: 932187647792.dkr.ecr.us-east-1.amazonaws.com
+  AWS_ECR_REPOSITORY: 932187647792.dkr.ecr.us-east-1.amazonaws.com/demo-repo
+stages:
+  - build
+  - deploy
+  
+build-mvn:
+  stage: build
+  script:
+    - mvn clean install
+    - docker build -t $DOCKER_REGISTRY/demo-repo:$CI_PIPELINE_ID .
+    - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - docker push $DOCKER_REGISTRY/demo-repo:$CI_PIPELINE_ID
+    - docker rmi $DOCKER_REGISTRY/demo-repo:$CI_PIPELINE_ID
+deploy-k8s:
+  stage: deploy
+  script: 
+    - kubectl version --short --client
+    - aws eks update-kubeconfig --name demo-cluster --kubeconfig "demo-cluster_kubeconfig.yaml" --region us-east-1 
+    - export KUBECONFIG=demo-cluster_kubeconfig.yaml
+    - kubectl create secret docker-registry ecr-secret --docker-server=$AWS_ECR_REPOSITORY --docker-username=AWS --docker-password=$ECR_TOKEN -n maven-app  || true
+    - kubectl apply -f eks-k8s/service.yaml
+    - sed -i "s/<VERSION>/${CI_PIPELINE_ID}/g" eks-k8s/deployment.yaml
+    - kubectl apply -f eks-k8s/deployment.yaml

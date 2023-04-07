@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: mvn-app-deployment
+  labels:
+    run: demo-cluster
+  namespace: maven-app 
+spec:
+  replicas: 3
+  selector: 
+    matchLabels: 
+      env: poc
+
+  template:
+    metadata:
+        name: mvn-pod
+        labels:
+          env: poc
+
+    spec:
+      containers:
+         - image: 932187647792.dkr.ecr.us-east-1.amazonaws.com/demo-repo:<VERSION>
+           name: mvn-app
+      imagePullSecrets:
+         - name: ecr-secret     

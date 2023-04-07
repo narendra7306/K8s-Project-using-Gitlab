@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+   name: mvn-app-svc
+   labels: 
+     env: testing
+   namespace: maven-app  
+
+spec:
+   selector: 
+     env: poc
+   type: LoadBalancer
+   ports:
+     - port: 80
+       targetPort: 80
